@@ -38,29 +38,17 @@ static NSString * const kRenotifyPeriodKey = @"RenotifyPeriod";
 
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-  NSString *expectedVersion = NSLocalizedString(@"expectedVersion", @"");
-  NSDictionary *systemVersionDictionary = [NSDictionary dictionaryWithContentsOfFile:
-                                              @"/System/Library/CoreServices/SystemVersion.plist"];
-  NSString *systemVersion = systemVersionDictionary[@"ProductVersion"];
-  
-  NSArray *systemVersionArray = [systemVersion componentsSeparatedByString:@"."];
-  if (systemVersionArray.count == 2) {
-      systemVersionArray = [systemVersionArray arrayByAddingObject:@"0"];
-    }
-
-  NSArray *expectedVersionArray = [expectedVersion componentsSeparatedByString:@"."];
-  if (expectedVersionArray.count == 2) {
-      expectedVersionArray = [expectedVersionArray arrayByAddingObject:@"0"];
-  }
-  
+  NSString *maxPendingUpdates = NSLocalizedString(@"maxPendingUpdates", @"");
     
-  if (systemVersionArray.count < 3 || expectedVersionArray.count < 3) {
-    NSLog(@"Exiting: Error, unable to properly determine system version or expected version");
+  NSDictionary *currentPendingUpdatesDictionary = [NSDictionary dictionaryWithContentsOfFile:
+                                              @"/Library/Preferences/ManagedInstalls.plist"];
+  NSString *currentPendingUpdates = currentPendingUpdatesDictionary[@"LastCheckResult"];
+    
+  if ([currentPendingUpdates intValue] <= [maxPendingUpdates intValue]) {
+    NSLog(@"Exiting: Info, Current pending updates did not surpass max.");
     [NSApp terminate:nil];
-  } else if (([expectedVersionArray[0] intValue] <= [systemVersionArray[0] intValue]) &&
-             ([expectedVersionArray[1] intValue] <= [systemVersionArray[1] intValue]) &&
-             ([expectedVersionArray[2] intValue] <= [systemVersionArray[2] intValue])) {
-    NSLog(@"Exiting: OS is already %@ or greater", expectedVersion);
+  } else if (currentPendingUpdates == 0) {
+    NSLog(@"Exiting: Info, Applications are fully patched.");
     [NSApp terminate:nil];
   }
 
@@ -154,8 +142,8 @@ static NSString * const kRenotifyPeriodKey = @"RenotifyPeriod";
   }
 
   // Show the instructions URL to the user
-  NSURL *instURL = [NSURL URLWithString:NSLocalizedString(@"instructionURL", @"")];
-  [[NSWorkspace sharedWorkspace] openURL:instURL];
+  // NSURL *instURL = [NSURL URLWithString:NSLocalizedString(@"instructionURL", @"")];
+  // [[NSWorkspace sharedWorkspace] openURL:instURL];
 
   // Synchronize defaults in case Puppet has made changes
   NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
